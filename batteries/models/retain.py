@@ -60,6 +60,11 @@ class RETAIN(nn.Module):
         )
         self.input_dim = embedding_kwargs["embedding_dim"]
 
+    @staticmethod
+    def generate_context(x, alpha, beta):
+        """ Method for generating the context vector. """
+        return torch.sum(alpha * (beta * x), dim=1)
+
     def forward(self, x):
         if self.embedding_kwargs is not None:
             x = self.embedding(x)
@@ -71,7 +76,7 @@ class RETAIN(nn.Module):
         beta = self.features_sequential(x)
 
         # Apply the final sum(alpha \times (beta dot x))
-        context = torch.sum(alpha * (beta * x), dim=1)
+        context = self.generate_context(x, alpha, beta)
 
         # Linear layer and output
         output = self.fc_output(context)

@@ -8,11 +8,11 @@ repos:
   rev: 3.7.9
   hooks:
   - id: flake8
-- repo: local
-  hooks:
-    - id: pytest-check
-      name: pytest-check
-      entry: pytest batteries
-      language: system
-      pass_filenames: false
-      always_run: true
+#- repo: local
+#  hooks:
+#    - id: pytest-check
+#      name: pytest-check
+#      entry: pytest batteries
+#      language: system
+#      pass_filenames: false
+#      always_run: true
