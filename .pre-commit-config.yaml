@@ -1,0 +1,18 @@
+repos:
+- repo: https://github.com/ambv/black
+  rev: stable
+  hooks:
+  - id: black
+    language_version: python3
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.7.9
+  hooks:
+  - id: flake8
+- repo: local
+  hooks:
+    - id: pytest-check
+      name: pytest-check
+      entry: pytest sacredex
+      language: system
+      pass_filenames: false
+      always_run: true
