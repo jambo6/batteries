@@ -4,18 +4,21 @@ import torchcde
 
 class NeuralCDE(nn.Module):
     """ Performs the Neural CDE training process over a batch of time series. """
-    def __init__(self,
-                 input_dim,
-                 hidden_dim,
-                 output_dim,
-                 initial_dim=None,
-                 hidden_hidden_dim=15,
-                 num_layers=3,
-                 apply_final_linear=True,
-                 interpolation='cubic',
-                 adjoint=False,
-                 solver='rk4',
-                 return_sequences=False):
+
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        output_dim,
+        initial_dim=None,
+        hidden_hidden_dim=15,
+        num_layers=3,
+        apply_final_linear=True,
+        interpolation="cubic",
+        adjoint=False,
+        solver="rk4",
+        return_sequences=False,
+    ):
         """
         Args:
             input_dim (int): The dimension of the path.
@@ -54,14 +57,22 @@ class NeuralCDE(nn.Module):
         self.func = _NCDEFunc(input_dim, hidden_dim, hidden_hidden_dim, num_layers)
 
         # Linear classifier to apply to final layer
-        self.final_linear = nn.Linear(self.hidden_dim, self.output_dim) if apply_final_linear else lambda x: x
+        self.final_linear = (
+            nn.Linear(self.hidden_dim, self.output_dim)
+            if apply_final_linear
+            else lambda x: x
+        )
 
     def forward(self, inputs):
-        assert len(inputs) == 2, 'Inputs must be a 2-tuple of (initial_values, coeffs)'
+        assert len(inputs) == 2, "Inputs must be a 2-tuple of (initial_values, coeffs)"
         initial, coeffs = inputs
 
         # Make lin int
-        spline = torchcde.NaturalCubicSpline if self.interpolation == 'cubic' else torchcde.LinearInterpolation
+        spline = (
+            torchcde.NaturalCubicSpline
+            if self.interpolation == "cubic"
+            else torchcde.LinearInterpolation
+        )
         data = spline(coeffs)
 
         # Setup h0
@@ -74,10 +85,14 @@ class NeuralCDE(nn.Module):
         )
 
         # Outputs
-        outputs = self.final_linear(out[:, -1, :]) if not self.return_sequences else self.final_linear(out)
+        outputs = (
+            self.final_linear(out[:, -1, :])
+            if not self.return_sequences
+            else self.final_linear(out)
+        )
 
         # If rectilinear and return sequences, return every other value
-        if all([self.return_sequences, self.interpolation == 'rectilinear']):
+        if all([self.return_sequences, self.interpolation == "rectilinear"]):
             outputs = outputs[:, ::2]
 
         return outputs
@@ -89,7 +104,16 @@ class _NCDEFunc(nn.Module):
     This creates a simple RNN-like block to be used as the computation function f in:
         dh/dt = f(h) dX/dt
     """
-    def __init__(self, input_dim, hidden_dim, hidden_hidden_dim=15, num_layers=1, density=0., rank=None):
+
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        hidden_hidden_dim=15,
+        num_layers=1,
+        density=0.0,
+        rank=None,
+    ):
         super().__init__()
 
         self.input_dim = input_dim

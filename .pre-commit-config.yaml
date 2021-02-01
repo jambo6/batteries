@@ -12,7 +12,7 @@ repos:
   hooks:
     - id: pytest-check
       name: pytest-check
-      entry: pytest sacredex
+      entry: pytest batteries
       language: system
       pass_filenames: false
       always_run: true

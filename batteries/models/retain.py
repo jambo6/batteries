@@ -3,10 +3,16 @@ from torch import nn
 
 
 class RETAIN(nn.Module):
-    """RETAIN model with time-series capabilities.
+    """RETAIN model with time-series capabilities."""
 
-    """
-    def __init__(self, input_dim, hidden_dim, output_dim, embedding_kwargs=None, return_sequences=False):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        output_dim,
+        embedding_kwargs=None,
+        return_sequences=False,
+    ):
         super(RETAIN, self).__init__()
 
         self.input_dim = input_dim
@@ -26,7 +32,7 @@ class RETAIN(nn.Module):
         self.series_sequential = nn.Sequential(
             nn.GRU(input_dim, hidden_dim, batch_first=True),
             ItemSelector(0),
-            nn.Linear(hidden_dim, input_dim)
+            nn.Linear(hidden_dim, input_dim),
         )
 
         # For extraction of most relevant features
@@ -34,7 +40,7 @@ class RETAIN(nn.Module):
             nn.GRU(input_dim, hidden_dim, batch_first=True),
             ItemSelector(0),
             nn.Linear(hidden_dim, input_dim),
-            nn.Tanh()
+            nn.Tanh(),
         )
 
         # Output layer
@@ -42,15 +48,17 @@ class RETAIN(nn.Module):
 
     def setup_embedding(self, embedding_kwargs):
         """ Setup an embedding if args are specified. """
-        kwarg_keys = ['input_dropout', 'embedding_dim', 'embedding_dropout']
+        kwarg_keys = ["input_dropout", "embedding_dim", "embedding_dropout"]
         if any([embedding_kwargs.get(x) is None for x in kwarg_keys]):
-            raise AssertionError("Invalid keys for embedding_kwargs, must contain {}".format(kwarg_keys))
+            raise AssertionError(
+                "Invalid keys for embedding_kwargs, must contain {}".format(kwarg_keys)
+            )
         self.embedding = nn.Sequential(
-            nn.Dropout(embedding_kwargs['input_dropout']),
-            nn.Linear(self.input_dim, embedding_kwargs['embedding_dim']),
-            nn.Dropout(embedding_kwargs['embedding_dropout']),
+            nn.Dropout(embedding_kwargs["input_dropout"]),
+            nn.Linear(self.input_dim, embedding_kwargs["embedding_dim"]),
+            nn.Dropout(embedding_kwargs["embedding_dropout"]),
         )
-        self.input_dim = embedding_kwargs['embedding_dim']
+        self.input_dim = embedding_kwargs["embedding_dim"]
 
     def forward(self, x):
         if self.embedding_kwargs is not None:
@@ -73,6 +81,7 @@ class RETAIN(nn.Module):
 
 class ItemSelector(nn.Module):
     """ Used for extracting an item from a nn.Module that returns a tuple, such as an RNN. """
+
     def __init__(self, index):
         super(ItemSelector, self).__init__()
         self.index = index
