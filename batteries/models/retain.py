@@ -32,7 +32,8 @@ class RETAIN(nn.Module):
         self.series_sequential = nn.Sequential(
             nn.GRU(input_dim, hidden_dim, batch_first=True),
             ItemSelector(0),
-            nn.Linear(hidden_dim, input_dim),
+            nn.Linear(hidden_dim, 1),
+            nn.Softmax()
         )
 
         # For extraction of most relevant features
@@ -63,7 +64,7 @@ class RETAIN(nn.Module):
     @staticmethod
     def generate_context(x, alpha, beta):
         """ Method for generating the context vector. """
-        return torch.sum(alpha * (beta * x), dim=1)
+        return torch.bmm(torch.transpose(alpha, 1, 2), beta * x).squeeze(1)
 
     def forward(self, x):
         if self.embedding_kwargs is not None:

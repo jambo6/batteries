@@ -6,6 +6,7 @@ from sklearn.preprocessing import (
     FunctionTransformer,
 )
 from sklearn.base import TransformerMixin
+from .mixin import apply_transform_to_channels, apply_fit_to_channels
 
 SCALERS = {"stdsc": StandardScaler(), "ma": MaxAbsScaler(), "mms": MinMaxScaler()}
 
@@ -36,19 +37,14 @@ class TensorScaler(TransformerMixin):
         else:
             self.scaler = scaling_function
 
-    def _trick(self, data):
-        return data.reshape(-1, data.shape[2])
-
-    def _untrick(self, data, shape):
-        return data.reshape(shape)
-
-    def fit(self, data, y=None):
-        self.scaler.fit(self._trick(data), y)
+    @apply_fit_to_channels
+    def fit(self, data, labels=None):
+        self.scaler.fit(data, labels)
         return self
 
+    @apply_transform_to_channels
     def transform(self, data):
-        scaled_data = self.scaler.transform(self._trick(data))
-        output_data = torch.Tensor(self._untrick(scaled_data, data.shape))
+        output_data = torch.Tensor(self.scaler.transform(data))
         return output_data
 
 

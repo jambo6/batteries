@@ -1,5 +1,12 @@
+import torch
 from torch import nn
 import torchcde
+
+SPLINES = {
+    'cubic': torchcde.NaturalCubicSpline,
+    'linear': torchcde.LinearInterpolation,
+    'rectilinear': torchcde.LinearInterpolation,
+}
 
 
 class NeuralCDE(nn.Module):
@@ -47,10 +54,14 @@ class NeuralCDE(nn.Module):
         self.solver = solver
         self.return_sequences = return_sequences
 
+        # Interpolation function
+        self.spline = SPLINES.get(self.interpolation)
+        if self.spline is None:
+            spline_keys = SPLINES.keys()
+            raise NotImplementedError("Allowed interpolation schemes {}, given {}".format(spline_keys, interpolation))
+
         # Initial to hidden
-        if initial_dim is None:
-            raise NotImplementedError()
-        else:
+        if initial_dim is not None:
             self.initial_linear = nn.Linear(initial_dim, hidden_dim)
 
         # The net that is applied to h_{t-1}
@@ -63,25 +74,28 @@ class NeuralCDE(nn.Module):
             else lambda x: x
         )
 
+    def setup_h0(self, inputs):
+        """ Sets up h0 according to given input. """
+        if self.initial_dim is not None:
+            assert len(inputs) == 2, "Inputs must be a 2-tuple of (initial_values, coeffs)"
+            initial, coeffs = inputs
+            h0 = self.initial_linear(initial)
+        else:
+            coeffs = inputs
+            batch_dim, length_dim, hidden_dim = coeffs.size(0), coeffs.size(1), self.hidden_dim
+            h0 = torch.autograd.Variable(torch.zeros(batch_dim, length_dim, hidden_dim)).to(coeffs.device)
+        return coeffs, h0
+
     def forward(self, inputs):
-        assert len(inputs) == 2, "Inputs must be a 2-tuple of (initial_values, coeffs)"
-        initial, coeffs = inputs
+        # Handle h0 and inputs
+        coeffs, h0 = self.setup_h0(inputs)
 
         # Make lin int
-        spline = (
-            torchcde.NaturalCubicSpline
-            if self.interpolation == "cubic"
-            else torchcde.LinearInterpolation
-        )
-        data = spline(coeffs)
-
-        # Setup h0
-        h0 = self.initial_linear(initial)
+        data = self.spline(coeffs)
 
         # Perform the adjoint operation
-        times = data.grid_points
         out = torchcde.cdeint(
-            data, self.func, h0, times, adjoint=self.adjoint, method=self.solver
+            data, self.func, h0, data.grid_points, adjoint=self.adjoint, method=self.solver
         )
 
         # Outputs
