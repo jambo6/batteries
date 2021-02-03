@@ -144,7 +144,7 @@ class _NCDEFunc(nn.Module):
                 layers += [nn.Linear(hidden_hidden_dim, hidden_hidden_dim), nn.ReLU()]
 
         # Add on final layer and Tanh and build net
-        layers.extend([nn.Linear(hidden_hidden_dim, hidden_dim * input_dim), nn.Tanh()])
+        layers += [nn.Linear(hidden_hidden_dim, hidden_dim * input_dim), nn.Tanh()]
         self.net = nn.Sequential(*layers)
 
     def forward(self, t, h):
