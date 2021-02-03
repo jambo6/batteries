@@ -83,7 +83,7 @@ class NeuralCDE(nn.Module):
         else:
             coeffs = inputs
             batch_dim, length_dim, hidden_dim = coeffs.size(0), coeffs.size(1), self.hidden_dim
-            h0 = torch.autograd.Variable(torch.zeros(batch_dim, length_dim, hidden_dim)).to(coeffs.device)
+            h0 = torch.autograd.Variable(torch.zeros(batch_dim, hidden_dim)).to(coeffs.device)
         return coeffs, h0
 
     def forward(self, inputs):
@@ -144,7 +144,7 @@ class _NCDEFunc(nn.Module):
                 layers += [nn.Linear(hidden_hidden_dim, hidden_hidden_dim), nn.ReLU()]
 
         # Add on final layer and Tanh and build net
-        layers.append([nn.Linear(hidden_hidden_dim, hidden_dim * input_dim), nn.Tanh()])
+        layers.extend([nn.Linear(hidden_hidden_dim, hidden_dim * input_dim), nn.Tanh()])
         self.net = nn.Sequential(*layers)
 
     def forward(self, t, h):

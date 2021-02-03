@@ -1,6 +1,7 @@
 import pytest
 import torch
 from torch import nn, optim
+
 from batteries import models
 
 MODELS = {
@@ -47,7 +48,6 @@ def training_loop(model, data, labels, n_epochs=5):
 @pytest.mark.parametrize(
     "model_name",
     ["rnn", "gru", "retain"],
-
 )
 def test_rnn_models(model_name):
     # Test full accuracy on an easy classification problem
