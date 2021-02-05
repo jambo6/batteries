@@ -1,15 +1,17 @@
 import torch
+import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
 
-def forward_fill(x, fill_index=-2):
+def forward_fill(x, fill_index=-2, backwards=False):
     """Forward fills data in a torch tensor of shape (..., length, input_channels) along the length dim.
 
     Arguments:
-        x: tensor of values with first channel index being time, of shape (..., length, input_channels), where ... is
+        x (tensor): Values with first channel index being time, of shape (..., length, input_channels), where ... is
             some number of batch dimensions.
-        fill_index: int that denotes the index to fill down. Default is -2 as we tend to use the convention (...,
-            length, input_channels) filling down the length dimension.
+        fill_index (int): Denotes the index to fill down. Default is -2 as we tend to use the convention (..., length,
+            input_channels) filling down the length dimension.
+        backwards (bool): Set True to first flip the tensor along the length axis so as to perform a backwards fill.
 
     Returns:
         A tensor with forward filled data.
@@ -18,12 +20,21 @@ def forward_fill(x, fill_index=-2):
     assert isinstance(x, torch.Tensor)
     assert x.dim() >= 2
 
+    # flipping if a backwards fill
+    def backflip(x):
+        x = x.flip(fill_index) if backwards else x
+        return x
+    x = backflip(x)
+
     mask = torch.isnan(x)
     if mask.any():
         cumsum_mask = (~mask).cumsum(dim=fill_index)
         cumsum_mask[mask] = 0
         _, index = cumsum_mask.cummax(dim=fill_index)
         x = x.gather(dim=fill_index, index=index)
+
+    # Re-flip if backwards
+    x = backflip(x)
 
     return x
 
@@ -57,3 +68,10 @@ def ragged_tensor_list_to_tensor(
     )
 
     return padded_tensor, lengths
+
+
+def get_num_params(model):
+    """ Gets the number of trainable parameters in a pytorch model. """
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    return params

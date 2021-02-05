@@ -22,7 +22,7 @@ class RETAIN(nn.Module):
         self.return_sequences = return_sequences
 
         if self.return_sequences:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         # Embedding dim if specified
         if embedding_kwargs is not None:
