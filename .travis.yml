@@ -1,0 +1,33 @@
+language: python
+cache: pip
+python:
+  - '3.6'
+install: pip install .
+script: pytest batteries
+notifications:
+  email:
+    on_failure: never
+    on_pull_requests: never
+
+# the interresting part!
+deploy:
+  # If you need to deploy files Travis has built, use the next line
+  skip_cleanup: true
+  # In this case we want to deploy to pypi
+  provider: pypi
+  # What distribution we want to deploy
+  distributions: sdist bdist_wheel
+  # When do we want to deploy?
+  on:
+    # In this case I want to deploy only when a tag is present...
+    tags: true
+    # ... and when tag is on master and respects the form "v0.0.0"
+    branch:
+      - main
+      - /v?(\d+\.)?(\d+\.)?(\*|\d+)$/
+  # Your pypi username
+  user: jambo
+  # Your Pypi password secured by Travis if you have Travis CLI installed
+#  password:
+  # Use the following if you don't have Travis CLI
+  password: 74831hufndsaoup89ru1
