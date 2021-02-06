@@ -1,12 +1,9 @@
 import torch
-from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
-    MaxAbsScaler,
-    FunctionTransformer,
-)
 from sklearn.base import TransformerMixin
-from .mixin import apply_transform_to_channels, apply_fit_to_channels
+from sklearn.preprocessing import (FunctionTransformer, MaxAbsScaler,
+                                   MinMaxScaler, StandardScaler)
+
+from ._mixin import apply_fit_to_channels, apply_transform_to_channels
 
 SCALERS = {"stdsc": StandardScaler(), "ma": MaxAbsScaler(), "mms": MinMaxScaler()}
 
@@ -16,15 +13,14 @@ class TensorScaler(TransformerMixin):
 
     Assumes the size is (..., length, input_channels), reshapes to (..., input_channels), performs the method
     operation and then reshapes back.
+
+    Arguments:
+        method (str): Scaling method, one of ('stdsc', 'ma', 'mms').
+        scaling_function (transformer): Specification of an sklearn transformer that performs a scaling operation.
+        Only one of this or scaling can be specified.
     """
 
     def __init__(self, method="stdsc", scaling_function=None):
-        """
-        Args:
-            method (str): Scaling method, one of ('stdsc', 'ma', 'mms').
-            scaling_function (transformer): Specification of an sklearn transformer that performs a scaling operation.
-                Only one of this or scaling can be specified.
-        """
         self.scaling = method
 
         if all([method is None, scaling_function is None]):
@@ -51,7 +47,7 @@ class TensorScaler(TransformerMixin):
 def scale_tensors(tensors, method="stdsc"):
     """A function version of TensorScaler, if multiple tensors are specified the first is used to fit the scaler
 
-    Args:
+    Arguments:
         tensors (tensor or list of tensors): Data to transform. If multiple tensors are specified, the first is used to
             fit.
         method (str): See TensorScaler.

@@ -3,7 +3,7 @@ from torch import nn
 
 
 class RETAIN(nn.Module):
-    """RETAIN model with time-series capabilities."""
+    """RETAIN model with time-series capabilities. """
 
     def __init__(
         self,
@@ -31,15 +31,15 @@ class RETAIN(nn.Module):
         # For extraction of most relevant series information
         self.series_sequential = nn.Sequential(
             nn.GRU(input_dim, hidden_dim, batch_first=True),
-            ItemSelector(0),
+            _ItemSelector(0),
             nn.Linear(hidden_dim, 1),
-            nn.Softmax()
+            nn.Softmax(),
         )
 
         # For extraction of most relevant features
         self.features_sequential = nn.Sequential(
             nn.GRU(input_dim, hidden_dim, batch_first=True),
-            ItemSelector(0),
+            _ItemSelector(0),
             nn.Linear(hidden_dim, input_dim),
             nn.Tanh(),
         )
@@ -47,7 +47,7 @@ class RETAIN(nn.Module):
         # Output layer
         self.fc_output = nn.Linear(input_dim, output_dim)
 
-    def setup_embedding(self, embedding_kwargs):
+    def _setup_embedding(self, embedding_kwargs):
         """ Setup an embedding if args are specified. """
         kwarg_keys = ["input_dropout", "embedding_dim", "embedding_dropout"]
         if any([embedding_kwargs.get(x) is None for x in kwarg_keys]):
@@ -62,7 +62,7 @@ class RETAIN(nn.Module):
         self.input_dim = embedding_kwargs["embedding_dim"]
 
     @staticmethod
-    def generate_context(x, alpha, beta):
+    def _generate_context(x, alpha, beta):
         """ Method for generating the context vector. """
         return torch.bmm(torch.transpose(alpha, 1, 2), beta * x).squeeze(1)
 
@@ -77,7 +77,7 @@ class RETAIN(nn.Module):
         beta = self.features_sequential(x)
 
         # Apply the final sum(alpha \times (beta dot x))
-        context = self.generate_context(x, alpha, beta)
+        context = self._generate_context(x, alpha, beta)
 
         # Linear layer and output
         output = self.fc_output(context)
@@ -85,11 +85,11 @@ class RETAIN(nn.Module):
         return output
 
 
-class ItemSelector(nn.Module):
+class _ItemSelector(nn.Module):
     """ Used for extracting an item from a nn.Module that returns a tuple, such as an RNN. """
 
     def __init__(self, index):
-        super(ItemSelector, self).__init__()
+        super(_ItemSelector, self).__init__()
         self.index = index
 
     def forward(self, x):

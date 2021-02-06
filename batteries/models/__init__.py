@@ -1,10 +1,5 @@
-from .rnn import RNN, GRU
 from .ncde import NeuralCDE
 from .retain import RETAIN
+from .rnn import RNN
 
-__all__ = [
-    "RNN",
-    "GRU",
-    "NeuralCDE",
-    "RETAIN"
-]
+__all__ = ["RNN", "NeuralCDE", "RETAIN"]

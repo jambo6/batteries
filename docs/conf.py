@@ -1,0 +1,38 @@
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath("../"))
+
+
+# Info
+project = "Batteries"
+copyright = "2021, James Morrill"
+author = "James Morrill"
+release = "v0.0.1"
+
+# Sphinx extensions
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.coverage", "sphinx.ext.napoleon"]
+
+# Things
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+templates_path = ["_templates"]
+
+# Dont include the full modules path
+add_module_names = False
+
+# Dont do alphabetical
+autodoc_member_order = "bysource"
+
+# Logo
+html_static_path = ["_static"]
+html_logo = "./_static/battery_logo.png"
+html_theme_options = {
+    "logo_only": True,
+    "display_version": True,
+}
+
+# Themes
+html_theme = "karma_sphinx_theme"
+# html_theme = 'catalyst_sphinx_theme'
+# html_theme = 'pytorch_sphinx_theme'
+# html_theme = 'sphinx_rtd_theme'
