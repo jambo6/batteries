@@ -2,7 +2,7 @@ language: python
 cache: pip
 python:
   - '3.6'
-install: pip install batteries
+install: pip install .
 script: pytest batteries
 notifications:
   email:
