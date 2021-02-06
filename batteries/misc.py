@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
 
@@ -24,6 +23,7 @@ def forward_fill(x, fill_index=-2, backwards=False):
     def backflip(x):
         x = x.flip(fill_index) if backwards else x
         return x
+
     x = backflip(x)
 
     mask = torch.isnan(x)
@@ -68,10 +68,3 @@ def ragged_tensor_list_to_tensor(
     )
 
     return padded_tensor, lengths
-
-
-def get_num_params(model):
-    """ Gets the number of trainable parameters in a pytorch model. """
-    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
-    params = sum([np.prod(p.size()) for p in model_parameters])
-    return params
