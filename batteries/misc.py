@@ -1,5 +1,5 @@
-import torch
 import numpy as np
+import torch
 from torch.nn.utils.rnn import pad_sequence
 
 
@@ -13,6 +13,15 @@ def forward_fill(x, fill_index=-2, backwards=False):
             input_channels) filling down the length dimension.
         backwards (bool): Set True to first flip the tensor along the length axis so as to perform a backwards fill.
 
+    Example:
+        >>> x = torch.tensor([[1, 2], [float('nan'), 1], [2, float('nan')]], dtype=torch.float)
+        >>> forward_fill(x, fill_index=-2, backwards=False)
+        tensor([
+            [1., 2.],
+            [1., 1.],
+            [2., 1.]
+        ])
+
     Returns:
         A tensor with forward filled data.
     """
@@ -24,6 +33,7 @@ def forward_fill(x, fill_index=-2, backwards=False):
     def backflip(x):
         x = x.flip(fill_index) if backwards else x
         return x
+
     x = backflip(x)
 
     mask = torch.isnan(x)
@@ -46,7 +56,7 @@ def ragged_tensor_list_to_tensor(
 
     This is done by extending tensors to the same length as the tensor in the list with maximal length.
 
-    Args:
+    Arguments:
         tensor_list (list or numpy object): List containing ragged tensors.
         fill_value (float): Value to fill if an array is extended.
 

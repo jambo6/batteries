@@ -10,7 +10,7 @@ def train_val_test_split(
     Given a list of tensor in the variable `tensors`, splits each randomly into (train_frac, val_frac, test_frac)
     proportions.
 
-    Args:
+    Arguments:
         tensors (list): A list of torch tensors.
         val_frac (float): The fraction to use as validation data.
         test_frac (float): The fraction to use as test data.
@@ -55,9 +55,9 @@ def train_val_test_split(
 def _tensors_train_test_split(tensors, test_frac, stratify=None, shuffle=True):
     """Splits a list of tensors into two parts according to the test_frac.
 
-    Args:
+    Arguments:
         tensors (list): A list of tensors.
-        frac (float): The fraction the test set.
+        test_frac (float): The fraction the test set.
         stratify (tensor): Stratification labels.
         shuffle (bool): Set True to shuffle first.
 

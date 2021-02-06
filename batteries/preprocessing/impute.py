@@ -1,8 +1,10 @@
 import torch
 from sklearn.base import TransformerMixin
 from sklearn.impute import SimpleImputer
-from .mixin import apply_fit_to_channels, apply_transform_to_channels
+
 from batteries.misc import forward_fill
+
+from ._mixin import apply_fit_to_channels, apply_transform_to_channels
 
 
 class BasicImpute(TransformerMixin):
@@ -10,12 +12,13 @@ class BasicImpute(TransformerMixin):
 
     Assumes the size is (..., length, input_channels), reshapes to (..., input_channels), performs the method
     operation and then reshapes back.
+
+    Arguments:
+        strategy (str): One of ('mean', 'median', 'most_frequent', 'constant').
+        fill_value (float): The value to fill nans with, this is active only if `strategy = 'constant'`.
     """
 
     def __init__(self, strategy, fill_value):
-        """
-        See sklearn.impute.SimpleImputer.
-        """
         self.strategy = strategy
         self.fill_value = fill_value
         self.imputer = SimpleImputer(strategy=strategy, fill_value=fill_value)
@@ -32,8 +35,13 @@ class BasicImpute(TransformerMixin):
 
 
 class NegativeImputer(TransformerMixin):
-    """ Replace negative values with zero. """
-    def __init__(self, fill_value=0.):
+    """Replace negative values with zero.
+
+    Arguments:
+        fill_value (float): The values to replace the negative values with.
+    """
+
+    def __init__(self, fill_value=0.0):
         self.fill_value = fill_value
 
     def fit(self, data, labels=None):
@@ -45,14 +53,15 @@ class NegativeImputer(TransformerMixin):
 
 
 class ForwardFill(TransformerMixin):
-    """ Forward fill the data along the length index. """
+    """Forward fill the data along the length index.
+
+    Arguments:
+        length_index (int): Set the index of the data for which to perform the fill. The default is -2 due to the
+            standard (..., length, input_channels) format.
+        backfill (bool): Set True to perform a backwards fill.
+    """
+
     def __init__(self, length_index=2, backfill=False):
-        """
-        Args:
-            length_index (int): Set the index of the data for which to perform the fill. The default is -2 due to the
-                standard (..., length, input_channels) format.
-            backfill (bool): Set True to perform a backwards fill.
-        """
         self.length_index = length_index
         if backfill:
             raise NotImplementedError

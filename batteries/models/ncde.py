@@ -1,17 +1,37 @@
 import torch
-from torch import nn
 import torchcde
+from torch import nn
 
 SPLINES = {
     # name: (interpolation function, spline function)
-    'cubic': (torchcde.interpolation_cubic, torchcde.NaturalCubicSpline),
-    'linear': (torchcde.linear_interpolation_coeffs, torchcde.LinearInterpolation),
-    'rectilinear': (lambda x: torchcde.linear_interpolation_coeffs(x, rectilinear=True), torchcde.LinearInterpolation),
+    "cubic": (torchcde.interpolation_cubic, torchcde.NaturalCubicSpline),
+    "linear": (torchcde.linear_interpolation_coeffs, torchcde.LinearInterpolation),
+    "rectilinear": (
+        lambda x: torchcde.linear_interpolation_coeffs(x, rectilinear=True),
+        torchcde.LinearInterpolation,
+    ),
 }
 
 
 class NeuralCDE(nn.Module):
-    """ Performs the Neural CDE training process over a batch of time series. """
+    """Performs the Neural CDE training process over a batch of time series.
+
+    Arguments:
+        input_dim (int): The dimension of the path.
+        hidden_dim (int): The dimension of the hidden state.
+        output_dim (int): The dimension of the output.
+        static_dim (int): The dimension of any static values, these will be concatenated to the initial values and
+            put through a network to build h0.
+        hidden_hidden_dim (int): The dimension of the hidden layer in the RNN-like block.
+        num_layers (int): The number of hidden layers in the vector field. Set to 0 for a linear vector field.
+            net with the given density. Hidden and hidden hidden dims must be multiples of 32.
+        use_initial (bool): Set True to use the initial absolute values to generate h0.
+        adjoint (bool): Set True to use odeint_adjoint.
+        solver (str): ODE solver, must be implemented in torchdiffeq.
+        return_sequences (bool): If True will return the linear function on the final layer, else linear function on
+            all layers.
+        apply_final_linear (bool): Set False for no final linear layer to be applied to the hidden state.
+    """
 
     def __init__(
         self,
@@ -28,23 +48,6 @@ class NeuralCDE(nn.Module):
         return_sequences=False,
         apply_final_linear=True,
     ):
-        """
-        Args:
-            input_dim (int): The dimension of the path.
-            hidden_dim (int): The dimension of the hidden state.
-            output_dim (int): The dimension of the output.
-            static_dim (int): The dimension of any static values, these will be concatenated to the initial values and
-                put through a network to build h0.
-            hidden_hidden_dim (int): The dimension of the hidden layer in the RNN-like block.
-            num_layers (int): The number of hidden layers in the vector field. Set to 0 for a linear vector field.
-                net with the given density. Hidden and hidden hidden dims must be multiples of 32.
-            use_initial (bool): Set True to use the initial absolute values to generate h0.
-            adjoint (bool): Set True to use odeint_adjoint.
-            solver (str): ODE solver, must be implemented in torchdiffeq.
-            return_sequences (bool): If True will return the linear function on the final layer, else linear function on
-                all layers.
-            apply_final_linear (bool): Set False for no final linear layer to be applied to the hidden state.
-        """
         super().__init__()
 
         self.input_dim = input_dim
@@ -65,7 +68,9 @@ class NeuralCDE(nn.Module):
             self.initial_linear = nn.Linear(self.initial_dim, self.hidden_dim)
 
         # Interpolation function
-        assert self.interpolation in SPLINES.keys(), "Unrecognised interpolation scheme {}".format(self.interpolation)
+        assert (
+            self.interpolation in SPLINES.keys()
+        ), "Unrecognised interpolation scheme {}".format(self.interpolation)
         self.interpolation_function, self.spline = SPLINES.get(self.interpolation)
 
         # The net that is applied to h_{t-1}
@@ -88,7 +93,7 @@ class NeuralCDE(nn.Module):
             initial_dim += self.static_dim
         return initial_dim
 
-    def setup_h0(self, inputs):
+    def _setup_h0(self, inputs):
         """Sets up the initial value of the hidden state.
 
         The hidden state depends on the options `use_initial` and `static_dim`. If either of these are specified the
@@ -101,23 +106,29 @@ class NeuralCDE(nn.Module):
             if self.use_initial:
                 h0 = self.initial_linear(inputs[..., 0, :])
             else:
-                h0 = torch.autograd.Variable(torch.zeros(inputs.size(0), self.hidden_dim)).to(inputs.device)
+                h0 = torch.autograd.Variable(
+                    torch.zeros(inputs.size(0), self.hidden_dim)
+                ).to(inputs.device)
         else:
-            assert len(inputs) == 2, "Inputs must be a 2-tuple of (static_data, temporal_data)"
+            assert (
+                len(inputs) == 2
+            ), "Inputs must be a 2-tuple of (static_data, temporal_data)"
             static, temporal = inputs
             if self.use_initial:
-                h0 = self.initial_linear(torch.cat((static, temporal[..., 0, :]), dim=-1))
+                h0 = self.initial_linear(
+                    torch.cat((static, temporal[..., 0, :]), dim=-1)
+                )
             else:
                 h0 = self.initial_linear(static)
         return temporal, h0
 
-    def make_outputs(self, hidden):
+    def _make_outputs(self, hidden):
         """ Hidden state to output format depending on `return_sequences` and rectilinear (return every other). """
         if self.return_sequences:
             outputs = self.final_linear(hidden)
 
             # If rectilinear and return sequences, return every other value
-            if self.interpolation == 'rectilinear':
+            if self.interpolation == "rectilinear":
                 outputs = outputs[:, ::2]
         else:
             outputs = self.final_linear(hidden[:, -1, :])
@@ -125,18 +136,23 @@ class NeuralCDE(nn.Module):
 
     def forward(self, inputs):
         # Handle h0 and inputs
-        temporal, h0 = self.setup_h0(inputs)
+        temporal, h0 = self._setup_h0(inputs)
 
         # Make lin int
         data = self.spline(temporal)
 
         # Perform the adjoint operation
         hidden = torchcde.cdeint(
-            data, self.func, h0, data.grid_points, adjoint=self.adjoint, method=self.solver
+            data,
+            self.func,
+            h0,
+            data.grid_points,
+            adjoint=self.adjoint,
+            method=self.solver,
         )
 
         # Convert to outputs
-        outputs = self.make_outputs(hidden)
+        outputs = self._make_outputs(hidden)
 
         return outputs
 
