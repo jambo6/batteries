@@ -2,11 +2,8 @@ language: python
 cache: pip
 python:
   - '3.6'
-# your install script or your install list
 install: pip install batteries
-# your test script or your install list
 script: pytest batteries
-# settings for notifications
 notifications:
   email:
     on_failure: never
