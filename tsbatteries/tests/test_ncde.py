@@ -1,6 +1,8 @@
 import pytest
 import torch
-from batteries.models import NeuralCDE
+
+from tsbatteries.models import NeuralCDE
+
 from .test_models import generate_classification_problem, training_loop
 
 
@@ -23,8 +25,8 @@ def create_ncde_problem(static_dim=None, use_initial=True):
         hidden_dim,
         output_dim,
         static_dim=static_dim,
-        interpolation='linear',
-        use_initial=use_initial
+        interpolation="linear",
+        use_initial=use_initial,
     )
 
     return model, (train_data, train_labels), (test_data, test_labels)
@@ -32,15 +34,12 @@ def create_ncde_problem(static_dim=None, use_initial=True):
 
 @pytest.mark.parametrize(
     "static_dim, use_initial",
-    [
-        (None, True),
-        (None, False),
-        (5, True),
-        (5, False)
-    ],
+    [(None, True), (None, False), (5, True), (5, False)],
 )
 def test_ncde_simple(static_dim, use_initial):
     # Test the model runs and gets a normal accuracy
-    model, train_data, _ = create_ncde_problem(static_dim=static_dim, use_initial=use_initial)
+    model, train_data, _ = create_ncde_problem(
+        static_dim=static_dim, use_initial=use_initial
+    )
     _, acc = training_loop(model, *train_data, n_epochs=10)
     assert acc > 0.7

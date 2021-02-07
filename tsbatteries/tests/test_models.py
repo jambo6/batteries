@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import nn, optim
 
-from batteries import models
+from tsbatteries import models
 
 MODELS = {"rnn": models.RNN, "retain": models.RETAIN, "ncde": models.NeuralCDE}
 
