@@ -23,14 +23,6 @@ add_module_names = False
 # Dont do alphabetical
 autodoc_member_order = "bysource"
 
-# Logo
-html_static_path = ["_static"]
-html_logo = "./_static/battery_logo.png"
-html_theme_options = {
-    "logo_only": True,
-    "display_version": True,
-}
-
 # Use an edited version of the catalyst theme
 # Answer taken from
 # https://stackoverflow.com/questions/14622698/customize-sphinxdoc-theme
