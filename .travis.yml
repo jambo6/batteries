@@ -17,4 +17,8 @@ deploy:
   distributions: "sdist bdist_wheel"
   skip_existing: true
   on:
-    branch: main
+    tags: true
+    branch:
+      - master
+      - /v?(\d+\.)?(\d+\.)?(\*|\d+)$/
+
