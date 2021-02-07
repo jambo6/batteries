@@ -2,7 +2,7 @@ import torch
 from sklearn.base import TransformerMixin
 from sklearn.impute import SimpleImputer
 
-from batteries.misc import forward_fill
+from tsbatteries.misc import forward_fill
 
 from ._mixin import apply_fit_to_channels, apply_transform_to_channels
 
