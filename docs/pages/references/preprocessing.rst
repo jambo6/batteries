@@ -3,5 +3,5 @@ Preprocessing
 
 Imputation
 ~~~~~~~~~~~~~~~~~
-.. automodule:: batteries.preprocessing.impute
+.. automodule:: tsbatteries.preprocessing.impute
     :members:

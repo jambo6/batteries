@@ -31,8 +31,14 @@ html_theme_options = {
     "display_version": True,
 }
 
+# Use an edited version of the catalyst theme
+# Answer taken from
+# https://stackoverflow.com/questions/14622698/customize-sphinxdoc-theme
+html_theme = "theme"  # use the theme in subdir 'theme'
+html_theme_path = ["."]  # make sphinx search for themes in current dir
+
 # Themes
-html_theme = "karma_sphinx_theme"
+# html_theme = "karma_sphinx_theme"
 # html_theme = 'catalyst_sphinx_theme'
 # html_theme = 'pytorch_sphinx_theme'
 # html_theme = 'sphinx_rtd_theme'

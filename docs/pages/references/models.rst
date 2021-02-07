@@ -1,5 +1,5 @@
 Models
 ===================
 
-.. automodule:: batteries.models
+.. automodule:: tsbatteries.models
     :members:

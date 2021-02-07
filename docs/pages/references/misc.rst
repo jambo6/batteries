@@ -1,5 +1,5 @@
 Miscellaneous
 ===================
 
-.. automodule:: batteries.misc
+.. automodule:: tsbatteries.misc
     :members:
