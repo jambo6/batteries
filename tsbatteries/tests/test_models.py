@@ -3,6 +3,7 @@ import torch
 from torch import nn, optim
 
 from tsbatteries import models
+from tsbatteries.models import utils
 
 MODELS = {"rnn": models.RNN, "retain": models.RETAIN, "ncde": models.NeuralCDE}
 
@@ -60,3 +61,22 @@ def test_rnn_models(model_name):
     )
     _, acc = training_loop(model, train_data, train_labels, n_epochs=50)
     assert 0 <= acc <= 1
+
+
+def test_tune_number_of_parameters():
+    # Load a basic classification problem
+    train_data, test_data, train_labels, test_labels = generate_classification_problem()
+    input_dim, output_dim = train_data.size(2), train_labels.size(1)
+
+    # Create a model builder
+    def model_builder(x): return MODELS['rnn'](
+        input_dim=input_dim,
+        hidden_dim=x,
+        output_dim=output_dim,
+        return_sequences=False,
+    )
+
+    # Check works
+    for num_params in [1000, 50000, 100000]:
+        model = utils.tune_number_of_parameters(model_builder, num_params)
+        assert 0.9 * num_params < utils.get_num_params(model) < 1.1 * num_params
