@@ -1,6 +1,7 @@
 import torch
 from sklearn.base import TransformerMixin
-from sklearn.impute import SimpleImputer
+from sklearn.impute import SimpleImputer as _SimpleImputer
+from torchcde import linear_interpolation_coeffs
 
 from tsbatteries.misc import forward_fill
 
@@ -21,7 +22,7 @@ class BasicImpute(TransformerMixin):
     def __init__(self, strategy, fill_value):
         self.strategy = strategy
         self.fill_value = fill_value
-        self.imputer = SimpleImputer(strategy=strategy, fill_value=fill_value)
+        self.imputer = _SimpleImputer(strategy=strategy, fill_value=fill_value)
 
     @apply_fit_to_channels
     def fit(self, data, labels=None):
@@ -71,3 +72,22 @@ class ForwardFill(TransformerMixin):
 
     def transform(self, data):
         return forward_fill(data, fill_index=self.length_index)
+
+
+class LinearInterpolation(TransformerMixin):
+    """Perform linear (or rectilinear) interpolation on the missing values.
+
+    Arguments:
+        rectilinear (bool): Set True for rectilinear interpolation. Note that this will result in a tensor of length
+            (2 * length - 1), approximately double.
+    """
+
+    def __init__(self, rectilinear=False):
+        self.rectilinear = rectilinear
+
+    def fit(self, data, labels=None):
+        return self
+
+    def transform(self, data):
+        rectilinear = 0 if self.rectilinear else None
+        return linear_interpolation_coeffs(data, rectilinear=rectilinear)

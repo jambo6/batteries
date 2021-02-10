@@ -1,0 +1,1 @@
+catalyst-sphinx-theme==1.1.2
