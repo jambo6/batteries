@@ -1,6 +1,6 @@
 import torch
 from sklearn.base import TransformerMixin
-from sklearn.impute import SimpleImputer
+from sklearn.impute import SimpleImputer as _SimpleImputer
 from torchcde import linear_interpolation_coeffs
 
 from tsbatteries.misc import forward_fill
@@ -22,7 +22,7 @@ class BasicImpute(TransformerMixin):
     def __init__(self, strategy, fill_value):
         self.strategy = strategy
         self.fill_value = fill_value
-        self.imputer = SimpleImputer(strategy=strategy, fill_value=fill_value)
+        self.imputer = _SimpleImputer(strategy=strategy, fill_value=fill_value)
 
     @apply_fit_to_channels
     def fit(self, data, labels=None):
