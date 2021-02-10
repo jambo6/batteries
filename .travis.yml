@@ -12,7 +12,8 @@ notifications:
     on_pull_requests: never
 branches:
   only:
-  - main
+    - main
+    - /^v.*$/
 deploy:
   provider: pypi
   user: __token__
