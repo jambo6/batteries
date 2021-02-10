@@ -17,7 +17,7 @@ class TensorScaler(TransformerMixin):
     Arguments:
         method (str): Scaling method, one of ('stdsc', 'ma', 'mms').
         scaling_function (transformer): Specification of an sklearn transformer that performs a scaling operation.
-        Only one of this or scaling can be specified.
+            Only one of this or scaling can be specified.
     """
 
     def __init__(self, method="stdsc", scaling_function=None):

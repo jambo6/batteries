@@ -43,7 +43,7 @@ class NeuralCDE(nn.Module):
         num_layers=3,
         use_initial=True,
         interpolation="linear",
-        adjoint=False,
+        adjoint=True,
         solver="rk4",
         return_sequences=False,
         apply_final_linear=True,
@@ -120,7 +120,11 @@ class NeuralCDE(nn.Module):
                 )
             else:
                 h0 = self.initial_linear(static)
-        return temporal, h0
+
+        # Create coeffs
+        coeffs = self.interpolation_function(temporal)
+
+        return coeffs, h0
 
     def _make_outputs(self, hidden):
         """ Hidden state to output format depending on `return_sequences` and rectilinear (return every other). """
@@ -136,10 +140,10 @@ class NeuralCDE(nn.Module):
 
     def forward(self, inputs):
         # Handle h0 and inputs
-        temporal, h0 = self._setup_h0(inputs)
+        coeffs, h0 = self._setup_h0(inputs)
 
         # Make lin int
-        data = self.spline(temporal)
+        data = self.spline(coeffs)
 
         # Perform the adjoint operation
         hidden = torchcde.cdeint(
