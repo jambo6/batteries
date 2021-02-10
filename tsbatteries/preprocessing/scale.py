@@ -5,7 +5,11 @@ from sklearn.preprocessing import (FunctionTransformer, MaxAbsScaler,
 
 from ._mixin import apply_fit_to_channels, apply_transform_to_channels
 
-SCALERS = {"stdsc": StandardScaler(), "ma": MaxAbsScaler(), "mms": MinMaxScaler()}
+SCALERS = {
+    "stdsc": StandardScaler(),
+    "ma": MaxAbsScaler(),
+    "mms": MinMaxScaler(),
+}
 
 
 class TensorScaler(TransformerMixin):

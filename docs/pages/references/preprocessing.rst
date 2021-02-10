@@ -6,12 +6,17 @@ Imputation
 .. automodule:: tsbatteries.preprocessing.impute
     :members:
 
-Scale
+Scaling
 ~~~~~~~~~~~~~~~~~
 .. automodule:: tsbatteries.preprocessing.scale
     :members:
 
-Split
+Splitting
 ~~~~~~~~~~~~~~~~~
 .. automodule:: tsbatteries.preprocessing.split
+    :members:
+
+Miscellaneous
+~~~~~~~~~~~~~~~~~
+.. automodule:: tsbatteries.preprocessing.misc
     :members:

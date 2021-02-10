@@ -3,25 +3,9 @@ import torch
 from torch import nn, optim
 
 from tsbatteries import models
+from tsbatteries.tests.helpers import make_classification_problem
 
 MODELS = {"rnn": models.RNN, "retain": models.RETAIN, "ncde": models.NeuralCDE}
-
-
-def generate_classification_problem():
-    # Random data, binary classification problem
-    data = torch.randn((50, 10, 3))
-    labels = torch.randint(0, 2, (50, 1))
-
-    # No negative values for labels == 1, so the task can train effectively
-    positive_data = data[(labels == 1).view(-1)]
-    positive_data[positive_data < 0] = 0
-    data[(labels == 1).view(-1)] = positive_data
-
-    # Split train test
-    train_data, test_data = data[:30], data[30:]
-    train_labels, test_labels = labels[:30], labels[30:]
-
-    return train_data, test_data, train_labels, test_labels
 
 
 def training_loop(model, data, labels, n_epochs=5):
@@ -48,8 +32,9 @@ def test_rnn_models(model_name):
     # Test full accuracy on an easy classification problem
     # Note that this additionally tests for standardised inputs
     # Load a basic classification problem
-    train_data, test_data, train_labels, test_labels = generate_classification_problem()
-    input_dim, output_dim = train_data.size(2), train_labels.size(1)
+    train_data, _ = make_classification_problem()
+    data, labels = train_data
+    input_dim, output_dim = data.size(2), labels.size(1)
 
     # Train the retain model
     model = MODELS[model_name](
@@ -58,5 +43,5 @@ def test_rnn_models(model_name):
         output_dim=output_dim,
         return_sequences=False,
     )
-    _, acc = training_loop(model, train_data, train_labels, n_epochs=50)
+    _, acc = training_loop(model, data, labels, n_epochs=50)
     assert 0 <= acc <= 1

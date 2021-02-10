@@ -3,12 +3,10 @@ from sklearn.base import TransformerMixin
 from sklearn.impute import SimpleImputer as _SimpleImputer
 from torchcde import linear_interpolation_coeffs
 
-from tsbatteries.misc import forward_fill
-
 from ._mixin import apply_fit_to_channels, apply_transform_to_channels
 
 
-class BasicImpute(TransformerMixin):
+class SimpleImputer(TransformerMixin):
     """Basic imputation for tensors. Simply borrows from sklearns SimpleImputer.
 
     Assumes the size is (..., length, input_channels), reshapes to (..., input_channels), performs the method
@@ -35,14 +33,15 @@ class BasicImpute(TransformerMixin):
         return output_data
 
 
-class NegativeImputer(TransformerMixin):
+class NegativeFilter(TransformerMixin):
     """Replace negative values with zero.
 
     Arguments:
         fill_value (float): The values to replace the negative values with.
     """
 
-    def __init__(self, fill_value=0.0):
+    def __init__(self, fill_value=float("nan")):
+        # Params
         self.fill_value = fill_value
 
     def fit(self, data, labels=None):
@@ -53,41 +52,77 @@ class NegativeImputer(TransformerMixin):
         return data
 
 
-class ForwardFill(TransformerMixin):
-    """Forward fill the data along the length index.
-
-    Arguments:
-        length_index (int): Set the index of the data for which to perform the fill. The default is -2 due to the
-            standard (..., length, input_channels) format.
-        backfill (bool): Set True to perform a backwards fill.
-    """
-
-    def __init__(self, length_index=2, backfill=False):
-        self.length_index = length_index
-        if backfill:
-            raise NotImplementedError
-
-    def fit(self, data, labels=None):
-        return self
-
-    def transform(self, data):
-        return forward_fill(data, fill_index=self.length_index)
-
-
-class LinearInterpolation(TransformerMixin):
+class Interpolation(TransformerMixin):
     """Perform linear (or rectilinear) interpolation on the missing values.
 
     Arguments:
-        rectilinear (bool): Set True for rectilinear interpolation. Note that this will result in a tensor of length
-            (2 * length - 1), approximately double.
+        method (str): One of 'linear' or 'rectilinear'.
     """
 
-    def __init__(self, rectilinear=False):
-        self.rectilinear = rectilinear
+    def __init__(self, method="linear"):
+        assert method in ["linear", "rectilinear"]
+        self.method = method
+        self._rectilinear = 0 if self.method == "rectilinear" else None
 
     def fit(self, data, labels=None):
         return self
 
     def transform(self, data):
-        rectilinear = 0 if self.rectilinear else None
-        return linear_interpolation_coeffs(data, rectilinear=rectilinear)
+        return linear_interpolation_coeffs(data, rectilinear=self._rectilinear)
+
+
+class ForwardFill(TransformerMixin):
+    """Forward fills data in a torch tensor of shape (..., length, input_channels) along the length dim.
+
+    Arguments:
+        fill_index (int): Denotes the index to fill down. Default is -2 as we tend to use the convention (..., length,
+            input_channels) filling down the length dimension.
+        backwards (bool): Set True to first flip the tensor along the length axis so as to perform a backwards fill.
+
+    Example:
+        >>> x = torch.tensor([[1, 2], [float('nan'), 1], [2, float('nan')]], dtype=torch.float)
+        >>> ForwardFill().transform(x, fill_index=-2, backwards=False)
+        tensor([
+            [1., 2.],
+            [1., 1.],
+            [2., 1.]
+        ])
+
+    Returns:
+        A tensor with forward filled data.
+    """
+
+    def __init__(self, fill_index=-2, backwards=False):
+        self.fill_index = fill_index
+        self.backwards = backwards
+
+    def fit(self, data, labels=None):
+        return self
+
+    def transform(self, data):
+        return _forward_fill(data, self.fill_index, self.backwards)
+
+
+def _forward_fill(x, fill_index=-2, backwards=False):
+    # Checks
+    assert isinstance(x, torch.Tensor)
+    assert x.dim() >= 2
+
+    # flipping if a backwards fill
+    def backflip(x):
+        x = x.flip(fill_index) if backwards else x
+        return x
+
+    x = backflip(x)
+
+    mask = torch.isnan(x)
+    if mask.any():
+        cumsum_mask = (~mask).cumsum(dim=fill_index)
+        cumsum_mask[mask] = 0
+        _, index = cumsum_mask.cummax(dim=fill_index)
+        x = x.gather(dim=fill_index, index=index)
+
+    # Re-flip if backwards
+    x = backflip(x)
+
+    return x

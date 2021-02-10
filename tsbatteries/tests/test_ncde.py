@@ -1,24 +1,19 @@
 import pytest
-import torch
 
 from tsbatteries.models import NeuralCDE
 
-from .test_models import generate_classification_problem, training_loop
+from .helpers import make_classification_problem
+from .test_models import training_loop
 
 
 def create_ncde_problem(static_dim=None, use_initial=True):
     # Simple problem
-    train_data, test_data, train_labels, test_labels = generate_classification_problem()
-    input_dim = train_data.size(-1)
+    train_data, test_data = make_classification_problem(static_dim=static_dim)
 
-    if static_dim is not None:
-        static_train = torch.randn(train_data.size(0), static_dim)
-        train_data = (static_train, train_data)
-        static_test = torch.randn(test_data.size(0), static_dim)
-        test_data = (static_test, test_data)
+    # Get sizes
+    input_dim, output_dim = [t.size(-1) for t in train_data][-2:]
 
     # Setup and NCDE
-    output_dim = train_labels.size(1)
     hidden_dim = 15
     model = NeuralCDE(
         input_dim,
@@ -29,7 +24,13 @@ def create_ncde_problem(static_dim=None, use_initial=True):
         use_initial=use_initial,
     )
 
-    return model, (train_data, train_labels), (test_data, test_labels)
+    # Function to convert to ncde format data
+    def to_ncde(tensors):
+        if static_dim is not None:
+            tensors = (tensors[0], tensors[1]), tensors[2]
+        return tensors
+
+    return model, to_ncde(train_data), to_ncde(test_data)
 
 
 @pytest.mark.parametrize(

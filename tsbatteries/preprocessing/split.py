@@ -37,7 +37,7 @@ def train_val_test_split(
         )
 
     # Get a train+val/test split followed by a train/val split.
-    train_val_data, test_data = _tensors_train_test_split(
+    train_val_data, test_data = tensor_train_test_split(
         tensors, test_frac, stratify=stratification_labels, shuffle=shuffle
     )
 
@@ -45,14 +45,14 @@ def train_val_test_split(
     if stratify_idx is not None:
         stratification_labels = train_val_data[stratify_idx]
     new_test_frac = val_frac / (1 - test_frac)
-    train_data, val_data = _tensors_train_test_split(
+    train_data, val_data = tensor_train_test_split(
         train_val_data, new_test_frac, stratify=stratification_labels, shuffle=shuffle
     )
 
     return train_data, val_data, test_data
 
 
-def _tensors_train_test_split(tensors, test_frac, stratify=None, shuffle=True):
+def tensor_train_test_split(tensors, test_frac, stratify=None, shuffle=True):
     """Splits a list of tensors into two parts according to the test_frac.
 
     Arguments:
