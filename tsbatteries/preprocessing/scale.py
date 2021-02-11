@@ -6,9 +6,9 @@ from sklearn.preprocessing import (FunctionTransformer, MaxAbsScaler,
 from ._mixin import apply_fit_to_channels, apply_transform_to_channels
 
 SCALERS = {
-    "stdsc": StandardScaler(),
-    "ma": MaxAbsScaler(),
-    "mms": MinMaxScaler(),
+    "stdsc": StandardScaler,
+    "ma": MaxAbsScaler,
+    "mms": MinMaxScaler,
 }
 
 
@@ -30,7 +30,7 @@ class TensorScaler(TransformerMixin):
         if all([method is None, scaling_function is None]):
             self.scaler = FunctionTransformer(func=None)
         elif isinstance(method, str):
-            self.scaler = SCALERS.get(method)
+            self.scaler = SCALERS.get(method)()
             assert (
                 self.scaler is not None
             ), "Scalings allowed are {}, recieved {}.".format(SCALERS.keys(), method)
@@ -39,7 +39,7 @@ class TensorScaler(TransformerMixin):
 
     @apply_fit_to_channels
     def fit(self, data, labels=None):
-        self.scaler.fit(data, labels)
+        self.scaler.fit(data)
         return self
 
     @apply_transform_to_channels
