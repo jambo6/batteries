@@ -3,7 +3,13 @@ from sklearn.model_selection import train_test_split
 
 
 def train_val_test_split(
-    tensors, val_frac=0.15, test_frac=0.15, stratify_idx=None, shuffle=True, seed=None
+    tensors,
+    val_frac=0.15,
+    test_frac=0.15,
+    stratify_idx=None,
+    shuffle=True,
+    seed=None,
+    return_indices=False,
 ):
     """Train test split method for an arbitrary number of tensors.
 
@@ -16,10 +22,13 @@ def train_val_test_split(
         test_frac (float): The fraction to use as test data.
         stratify_idx (int): The index of the `tensors` variable to use as stratification labels.
         shuffle (bool): Set True to shuffle first.
+        return_indices (bool): Set True to return a 3-tuple of index locations (train_indices, val_indices,
+            test_indices) rather than the split tensors themselves.
         seed (int): Random seed.
 
     Returns:
-        A tuple containing three lists corresponding to the train/val/test split of `tensors`.
+        A tuple containing three lists corresponding to the train/val/test split of `tensors` or the absolute index
+            locations.
     """
     # Set seed
     if seed is not None:
@@ -28,6 +37,9 @@ def train_val_test_split(
     # Check all tensors have the same length
     num_samples = tensors[0].size(0)
     assert [t.size(0) == num_samples for t in tensors]
+
+    # Add an indices tensor to get absolute index location
+    tensors.append(np.arange(len(tensors[0])))
 
     # Stratification labels
     stratification_labels = None
@@ -49,7 +61,14 @@ def train_val_test_split(
         train_val_data, new_test_frac, stratify=stratification_labels, shuffle=shuffle
     )
 
-    return train_data, val_data, test_data
+    # Return either of the indices or the full tensors
+    tensors = [train_data, val_data, test_data]
+    if return_indices:
+        output = [x[-1] for x in tensors]
+    else:
+        output = [x[:-1] for x in tensors]
+
+    return output
 
 
 def tensor_train_test_split(tensors, test_frac, stratify=None, shuffle=True):

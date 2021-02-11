@@ -32,7 +32,6 @@ class PadRaggedTensors(TransformerMixin):
         Returns:
 
         """
-        assert isinstance(data, list), "Data must be a list of tensors."
         padded_tensor, _ = _pad_ragged_tensors(data, self.fill_value, self.max_seq_len)
         return padded_tensor
 
