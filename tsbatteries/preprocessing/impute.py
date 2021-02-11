@@ -3,7 +3,7 @@ from sklearn.base import TransformerMixin
 from sklearn.impute import SimpleImputer as _SimpleImputer
 from torchcde import linear_interpolation_coeffs
 
-from ._mixin import apply_fit_to_channels, apply_transform_to_channels
+from ._mixin import apply_fit_to_channels, apply_transform_to_channels, apply_transform_to_channel_subset
 
 
 class SimpleImputer(TransformerMixin):
@@ -17,9 +17,11 @@ class SimpleImputer(TransformerMixin):
         fill_value (float): The value to fill nans with, this is active only if `strategy = 'constant'`.
     """
 
-    def __init__(self, strategy, fill_value):
+    def __init__(self, strategy, fill_value, channel_indices=None):
         self.strategy = strategy
         self.fill_value = fill_value
+        self.channel_indices = channel_indices
+
         self.imputer = _SimpleImputer(strategy=strategy, fill_value=fill_value)
 
     @apply_fit_to_channels
@@ -27,6 +29,7 @@ class SimpleImputer(TransformerMixin):
         self.imputer.fit(data)
         return self
 
+    @apply_transform_to_channel_subset
     @apply_transform_to_channels
     def transform(self, data):
         output_data = torch.Tensor(self.imputer.transform(data))
@@ -40,13 +43,14 @@ class NegativeFilter(TransformerMixin):
         fill_value (float): The values to replace the negative values with.
     """
 
-    def __init__(self, fill_value=float("nan")):
-        # Params
+    def __init__(self, fill_value=float("nan"), channel_indices=None):
         self.fill_value = fill_value
+        self.channel_indices = channel_indices
 
     def fit(self, data, labels=None):
         return self
 
+    @apply_transform_to_channel_subset
     def transform(self, data):
         data[data < 0] = self.fill_value
         return data
@@ -59,14 +63,18 @@ class Interpolation(TransformerMixin):
         method (str): One of 'linear' or 'rectilinear'.
     """
 
-    def __init__(self, method="linear"):
-        assert method in ["linear", "rectilinear"]
+    def __init__(self, method="linear", channel_indices=None):
+        assert method in ["linear", "rectilinear"], "Got method {} which is not recognised".format(method)
         self.method = method
+        self.channel_indices = channel_indices
+
+        # Linear interpolation function requires the channel index of times
         self._rectilinear = 0 if self.method == "rectilinear" else None
 
     def fit(self, data, labels=None):
         return self
 
+    @apply_transform_to_channel_subset
     def transform(self, data):
         return linear_interpolation_coeffs(data, rectilinear=self._rectilinear)
 
@@ -78,6 +86,8 @@ class ForwardFill(TransformerMixin):
         fill_index (int): Denotes the index to fill down. Default is -2 as we tend to use the convention (..., length,
             input_channels) filling down the length dimension.
         backwards (bool): Set True to first flip the tensor along the length axis so as to perform a backwards fill.
+        channel_indices (list or None): Leave as None to apply to the whole dataset, else apply a list of indices to
+            apply only to that subset of channels, e.g. [0, 2, 5] will apply to the first third and fifth channel.
 
     Example:
         >>> x = torch.tensor([[1, 2], [float('nan'), 1], [2, float('nan')]], dtype=torch.float)
@@ -92,13 +102,15 @@ class ForwardFill(TransformerMixin):
         A tensor with forward filled data.
     """
 
-    def __init__(self, fill_index=-2, backwards=False):
+    def __init__(self, fill_index=-2, backwards=False, channel_indices=None):
         self.fill_index = fill_index
         self.backwards = backwards
+        self.channel_indices = channel_indices
 
     def fit(self, data, labels=None):
         return self
 
+    @apply_transform_to_channel_subset
     def transform(self, data):
         return _forward_fill(data, self.fill_index, self.backwards)
 
