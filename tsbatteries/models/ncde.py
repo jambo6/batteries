@@ -3,13 +3,9 @@ import torchcde
 from torch import nn
 
 SPLINES = {
-    # name: (interpolation function, spline function)
-    "cubic": (torchcde.interpolation_cubic, torchcde.NaturalCubicSpline),
-    "linear": (torchcde.linear_interpolation_coeffs, torchcde.LinearInterpolation),
-    "rectilinear": (
-        lambda x: torchcde.linear_interpolation_coeffs(x, rectilinear=True),
-        torchcde.LinearInterpolation,
-    ),
+    "cubic": torchcde.NaturalCubicSpline,
+    "linear": torchcde.LinearInterpolation,
+    "rectilinear": torchcde.LinearInterpolation,
 }
 
 
@@ -31,6 +27,8 @@ class NeuralCDE(nn.Module):
         return_sequences (bool): If True will return the linear function on the final layer, else linear function on
             all layers.
         apply_final_linear (bool): Set False for no final linear layer to be applied to the hidden state.
+        return_filtered_rectilinear (bool): Set True to return every other output if the interpolation scheme chosen
+            is rectilinear, this is because rectilinear doubles the input length. False will return the full output.
     """
 
     def __init__(
@@ -47,6 +45,7 @@ class NeuralCDE(nn.Module):
         solver="rk4",
         return_sequences=False,
         apply_final_linear=True,
+        return_filtered_rectilinear=True,
     ):
         super().__init__()
 
@@ -62,6 +61,7 @@ class NeuralCDE(nn.Module):
         self.solver = solver
         self.return_sequences = return_sequences
         self.apply_final_linear = apply_final_linear
+        self.return_filtered_rectilinear = return_filtered_rectilinear
 
         # Set initial linear layer
         if self.initial_dim > 0:
@@ -71,7 +71,7 @@ class NeuralCDE(nn.Module):
         assert (
             self.interpolation in SPLINES.keys()
         ), "Unrecognised interpolation scheme {}".format(self.interpolation)
-        self.interpolation_function, self.spline = SPLINES.get(self.interpolation)
+        self.spline = SPLINES.get(self.interpolation)
 
         # The net that is applied to h_{t-1}
         self.func = _NCDEFunc(input_dim, hidden_dim, hidden_hidden_dim, num_layers)
@@ -102,7 +102,7 @@ class NeuralCDE(nn.Module):
         hidden state is used.
         """
         if self.static_dim is None:
-            temporal = inputs
+            coeffs = inputs
             if self.use_initial:
                 h0 = self.initial_linear(inputs[..., 0, :])
             else:
@@ -113,16 +113,13 @@ class NeuralCDE(nn.Module):
             assert (
                 len(inputs) == 2
             ), "Inputs must be a 2-tuple of (static_data, temporal_data)"
-            static, temporal = inputs
+            static, coeffs = inputs
             if self.use_initial:
                 h0 = self.initial_linear(
-                    torch.cat((static, temporal[..., 0, :]), dim=-1)
+                    torch.cat((static, coeffs[..., 0, :]), dim=-1)
                 )
             else:
                 h0 = self.initial_linear(static)
-
-        # Create coeffs
-        coeffs = self.interpolation_function(temporal)
 
         return coeffs, h0
 
@@ -132,7 +129,7 @@ class NeuralCDE(nn.Module):
             outputs = self.final_linear(hidden)
 
             # If rectilinear and return sequences, return every other value
-            if self.interpolation == "rectilinear":
+            if (self.interpolation == "rectilinear") and self.return_filtered_rectilinear:
                 outputs = outputs[:, ::2]
         else:
             outputs = self.final_linear(hidden[:, -1, :])

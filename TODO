@@ -1,0 +1,5 @@
+# Add random states to PipelineCompiler splitting
+
+# Allow the preprocessing functions to act only on certain columns
+
+# Check if column and channel mixins can be compiled safely
