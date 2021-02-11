@@ -38,3 +38,20 @@ def apply_fit_to_channels(fit):
         return fit(self, data_2d, labels=labels)
 
     return inner
+
+
+def apply_transform_to_channel_subset(transform):
+    """Decorator for applying to only a subset of the channel indices.
+
+    This requires the class to have a channel_indices argument.
+    """
+
+    def inner(self, data):
+        assert hasattr(self, 'channel_indices'), "Decorator requires channel_indices attribute."
+        if self.channel_indices is None:
+            data = transform(self, data)
+        else:
+            data[..., self.channel_indices] = transform(self, data[..., self.channel_indices])
+        return data
+
+    return inner
