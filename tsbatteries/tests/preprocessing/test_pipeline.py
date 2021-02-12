@@ -33,6 +33,12 @@ def temporal_pipeline():
     return pipeline
 
 
+@pytest.fixture()
+def label_pipeline():
+    pipeline = preprocessing.LabelProcessor(problem="oneshot")
+    return pipeline
+
+
 def test_pipeline(temporal_pipeline):
     # Create random tensor data
     data = [torch.randn(5, 2) for _ in range(5)]
@@ -49,12 +55,12 @@ def test_pipeline(temporal_pipeline):
     ],
 )
 def test_preprocessing_pipeline(
-    static_pipeline, temporal_pipeline, static_dim, batch_size
+    static_pipeline, temporal_pipeline, label_pipeline, static_dim, batch_size
 ):
     # Check the preprocessing pipeline can be run effectively with and without static data
     train_data, _ = make_classification_problem(static_dim=5)
     static_data, temporal_data, labels = train_data
-    temporal_data = np.array([x for x in temporal_data], dtype=np.object)
+    temporal_data = np.array([x for x in temporal_data], dtype=object)
     if static_dim is None:
         static_data = None
         static_pipeline = None
@@ -62,7 +68,7 @@ def test_preprocessing_pipeline(
     # Check fit transform works with full data
     dataset = PipelineDataset(static_data, temporal_data, labels)
     main_pipeline = PipelineCompiler(
-        static_pipeline, temporal_pipeline, batch_size=batch_size
+        static_pipeline, temporal_pipeline, label_pipeline, batch_size=batch_size
     )
     output = main_pipeline.fit_transform(dataset)
 

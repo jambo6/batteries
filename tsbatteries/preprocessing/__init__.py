@@ -3,6 +3,7 @@ from sklearn.pipeline import Pipeline
 from .impute import ForwardFill, Interpolation, NegativeFilter, SimpleImputer
 from .misc import PadRaggedTensors
 from .pipeline import PipelineCompiler, PipelineDataset
+from .problem import LabelProcessor
 from .scale import TensorScaler
 from .split import tensor_train_test_split, train_val_test_split
 
@@ -11,6 +12,8 @@ __all__ = [
     "Pipeline",
     "PipelineCompiler",
     "PipelineDataset",
+    # labels
+    "LabelProcessor",
     # misc
     "PadRaggedTensors",
     # impute

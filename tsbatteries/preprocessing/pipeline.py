@@ -37,17 +37,21 @@ class PipelineCompiler(TransformerMixin):
         indicies (list): A list containing [train_indices, val_indices, test_indices]. Useful for easy iteration.
     """
 
-    def __init__(self, static_pipeline=None, temporal_pipeline=None, batch_size=None):
+    def __init__(
+        self, static_pipeline, temporal_pipeline, label_pipeline, batch_size=None
+    ):
         """
         Args:
-            static_pipeline (sklearn pipeline): The pipeline to be applied to the static data. Leave as none if no
-                static data is being used.
+            static_pipeline (sklearn pipeline or None): The pipeline to be applied to the static data. Leave as None
+                if no static data is being used.
             temporal_pipeline (sklearn pipeline): The pipeline to be applied to the temporal data.
+            label_pipeline (sklearn pipeline): The pipeline to be applied to the labels.
             batch_size (int): Set this only if you wish the output of the transform method to be three dataloaders
                 rather than tensor lists.
         """
         self.static_pipeline = static_pipeline
         self.temporal_pipeline = temporal_pipeline
+        self.label_pipeline = label_pipeline
         self.batch_size = batch_size
 
         self.train_indices = None
