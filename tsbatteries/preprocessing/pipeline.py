@@ -35,6 +35,7 @@ class PipelineCompiler(TransformerMixin):
         val_indices (list): As train_indices but validation.
         test_indices (list): As train_indices but test.
         indicies (list): A list containing [train_indices, val_indices, test_indices]. Useful for easy iteration.
+        criterion (nn.Module): A loss_str criterion.
     """
 
     def __init__(
@@ -57,6 +58,7 @@ class PipelineCompiler(TransformerMixin):
         self.train_indices = None
         self.val_indices = None
         self.test_indices = None
+        self.criterion = None
 
     @property
     def indices(self):
@@ -64,9 +66,14 @@ class PipelineCompiler(TransformerMixin):
 
     def fit(self, dataset):
         """ Applies the train/val/test split and then fits the pipeline to the training data. """
+        # Process the labels
+        self.label_pipeline.fit(dataset.labels)
+
         # Split
+        split_labels = self.label_pipeline.split_labels
+        stratify_index = self.label_pipeline.stratify_index
         self.train_indices, self.val_indices, self.test_indices = train_val_test_split(
-            [dataset.labels], return_indices=True, stratify_idx=0
+            [split_labels], return_indices=True, stratify_idx=stratify_index
         )
 
         # Apply the pipelines to the training data
@@ -79,7 +86,7 @@ class PipelineCompiler(TransformerMixin):
     def _apply_pipeline_to_indices(self, dataset, indices):
         # Get temporal and labels
         temporal_data = self.temporal_pipeline.transform(dataset.temporal_data[indices])
-        labels = dataset.labels[indices]
+        labels = self.label_pipeline.transform(dataset.labels[indices])
         tensors = [temporal_data, labels]
 
         # Finally add static if we have static data

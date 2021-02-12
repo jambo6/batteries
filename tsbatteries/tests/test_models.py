@@ -94,7 +94,6 @@ def test_continuous_labels():
     labels = LabelProcessor(
         problem="online", lookback=1, lookforward=3, pad_sequence=True
     ).transform(labels)
-    labels = labels.unsqueeze(-1)
     input_dim = data.size(-1)
 
     # Model loop
