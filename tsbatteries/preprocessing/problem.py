@@ -66,11 +66,10 @@ class LabelProcessor(TransformerMixin):
                 labels, lookback=self.lookback, lookforward=self.lookforward
             )
         if self.pad_sequence:
-            labels = (
-                PadRaggedTensors(fill_value=float("nan"))
-                .transform(labels)
-                .unsqueeze(-1)
-            )
+            labels = PadRaggedTensors(fill_value=float("nan")).transform(labels)
+        if self.problem == "online":
+            # TODO: Whats going on here.
+            labels = labels.unsqueeze(-1)
         return labels
 
 
