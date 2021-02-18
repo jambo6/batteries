@@ -25,9 +25,9 @@ class RNN(nn.Module):
         input_dim,
         hidden_dim,
         output_dim,
+        static_dim=None,
         num_layers=1,
         model_string="rnn",
-        nonlinearity="tanh",
         bias=True,
         dropout=0,
         return_sequences=True,
@@ -38,14 +38,15 @@ class RNN(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
+        self.static_dim = static_dim
         self.num_layers = num_layers
         self.model_string = model_string
-        self.nonlinearity = nonlinearity
         self.bias = bias
         self.dropout = dropout
         self.return_sequences = return_sequences
         self.apply_final_linear = apply_final_linear
 
+        # Get the model class
         model = MODELS.get(model_string)
         if model is None:
             raise NotImplementedError(
@@ -53,15 +54,26 @@ class RNN(nn.Module):
                     MODELS.keys(), model_string
                 )
             )
+
+        # Network is static dim is set
+        if self.static_dim is not None:
+            self.initial_net = nn.Sequential(
+                nn.Linear(self.static_dim, self.hidden_dim),
+                nn.ReLU(),
+                nn.Linear(self.static_dim, self.hidden_dim),
+            )
+
+        # Initialise
         self.rnn = model(
             input_size=input_dim,
             hidden_size=hidden_dim,
             num_layers=num_layers,
-            nonlinearity=nonlinearity,
             bias=bias,
             dropout=dropout,
             batch_first=True,
         )
+
+        # Output layer
         self.total_hidden_size = num_layers * hidden_dim
         self.final_linear = (
             nn.Linear(self.total_hidden_size, output_dim)
@@ -69,9 +81,25 @@ class RNN(nn.Module):
             else lambda x: x
         )
 
+    def _setup_h0(self, inputs):
+        """ Puts static data through a small network if it is set. """
+        if self.static_dim is not None:
+            assert (
+                len(inputs) == 2
+            ), "Inputs must be a 2-tuple of (static_data, temporal_data)."
+            static_data, temporal_data = inputs
+            h0 = self.initial_net(static_data)
+        else:
+            temporal_data = inputs
+            h0 = None
+        return temporal_data, h0
+
     def forward(self, x):
+        # Handle inputs and setup h0
+        x, h0 = self._setup_h0(x)
+
         # Run the RNN
-        h_full, _ = self.rnn(x)
+        h_full, _ = self.rnn(x, h0)
 
         # Terminal output if classifcation else return all outputs
         outputs = (

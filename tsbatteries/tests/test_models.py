@@ -39,16 +39,18 @@ def training_loop(model, data, labels, n_epochs=5, criterion="bce"):
 
 
 @pytest.mark.parametrize(
-    "model_name",
-    ["rnn", "retain"],
+    "model_name, static_dim",
+    [("rnn", None), ("retain", None)],
 )
-def test_rnn_models(model_name):
+def test_rnn_models(model_name, static_dim):
     # Test full accuracy on an easy classification problem
     # Note that this additionally tests for standardised inputs
     # Load a basic classification problem
-    train_data, _ = make_classification_problem()
-    data, labels = train_data
-    input_dim, output_dim = data.size(2), labels.size(1)
+    input_dim = 5
+    output_dim = 1
+    train_data, _ = make_classification_problem(
+        static_dim=static_dim, input_dim=input_dim
+    )
 
     # Train the retain model
     model = MODELS[model_name](
@@ -57,7 +59,7 @@ def test_rnn_models(model_name):
         output_dim=output_dim,
         return_sequences=False,
     )
-    _, acc = training_loop(model, data, labels, n_epochs=50)
+    _, acc = training_loop(model, *train_data, n_epochs=50)
     assert 0 <= acc <= 1
 
 

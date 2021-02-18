@@ -1,7 +1,7 @@
 from sklearn.base import TransformerMixin
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
-from tsbatteries.models.utils import StaticTemporalTensorDataset
+from tsbatteries.models.utils import SupervisedLearningDataset
 from tsbatteries.preprocessing.split import train_val_test_split
 
 
@@ -98,10 +98,7 @@ class PipelineCompiler(TransformerMixin):
 
     def _to_dataloader(self, tensors):
         # Convert into a dataloader
-        dataset_class = (
-            StaticTemporalTensorDataset if len(tensors) == 3 else TensorDataset
-        )
-        dataset = dataset_class(*tensors)
+        dataset = SupervisedLearningDataset(tensors[:-1], tensors[-1])
         dataloader = DataLoader(dataset, batch_size=self.batch_size)
         return dataloader
 
@@ -112,7 +109,7 @@ class PipelineCompiler(TransformerMixin):
             If batch size is not set, returns a list of lists of tensors with the inner lists containing [static,
                 temporal, labels] for train/val/test respectively.
             If batch size is set returns a list of dataloaders that load from a TensorDataset(temporal, labels) if no
-                static data is set, else from StaticTemporalTensorDataset.
+                static data is set, else from SupervisedLearningDataset.
         """
         assert all(
             [x is not None for x in self.indices]

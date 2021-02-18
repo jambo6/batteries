@@ -3,18 +3,42 @@ import torch
 from torch import nn
 
 
-class StaticTemporalTensorDataset:
-    """ Outputs a tuple of (static, temporal) and labels at the specified indices. """
+class SupervisedLearningDataset:
+    """Dataset for a collection of input tensors and corresponding labels.
 
-    def __init__(self, static_data, temporal_data, labels):
-        super(StaticTemporalTensorDataset, self).__init__()
-        assert len(static_data) == len(temporal_data) == len(labels)
-        self.static_data = static_data
-        self.temporal_data = temporal_data
+    Given a set of inputs (inputs_1, ..., inputs_n) with corresponding labels, the __getitem__ method returns
+        [inputs_1[item], ..., inputs_n[item]], labels[item]
+
+    In general model forward methods accept a single input. If this input is a tuple, additional logic takes place
+    within the class. This class allows for multiple inputs to be used whilst still resulting in a single input to
+    the model forward method. This makes things easier when using pre-existing tools (e.g. ignite) to handle batch
+    unpacking since no modifications to the provided factory functions are required.
+    """
+
+    def __init__(self, tensors, labels):
+        super(SupervisedLearningDataset, self).__init__()
+
+        self._assert(tensors, labels)
+
+        self.tensors = tensors
         self.labels = labels
 
+    def _assert(self, tensors, labels):
+        assert any(
+            [isinstance(tensors, x) for x in [list, torch.Tensor]]
+        ), "tensors must be a list or tensor"
+        if isinstance(tensors, list):
+            self.is_list = True
+            assert [len(x) == len(labels) for x in tensors]
+        else:
+            self.is_list = False
+            assert len(tensors) == len(labels)
+
     def __getitem__(self, index):
-        return (self.static_data[index], self.temporal_data[index]), self.labels[index]
+        if self.is_list:
+            return [t[index] for t in self.tensors], self.labels[index]
+        else:
+            return self.tensors[index], self.labels[index]
 
     def __len__(self):
         return len(self.labels)

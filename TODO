@@ -1,5 +1,10 @@
 # Add random states to PipelineCompiler splitting
 
-# Allow the preprocessing functions to act only on certain columns
+# Put the ignite trainer in here and make a non-ignite trainer
 
-# Check if column and channel mixins can be compiled safely
+# Output model and datasets and allow for further performance evaluation (for example full ROC)
+
+# Enable pipeline application to dataframes, returning split dataframes.
+
+# Make the Pipeline be a train test process pipeline.
+    - Add more options for splitting (train/test only or even no split).
